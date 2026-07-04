@@ -71,3 +71,4 @@ This executes the `tests/sysmon_tests` package through the root Bazel target and
 - `//:main_test_target` is a Bazel `test_suite` target that runs the test package defined in `tests/sysmon_tests/`.
 - The test runner is responsible for generating both `test.log` and `report.xml`.
 - See `tests/README.md` for package-level execution details and `framework/README.md` for internal framework behavior.
+# master
