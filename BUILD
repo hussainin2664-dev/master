@@ -1,4 +1,5 @@
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//:py_inamdar.bzl", "py_inamdar_test")
 
 py_library(
     name = "framework",
@@ -7,18 +8,10 @@ py_library(
     deps = [
         "@pip//pytest",
     ],
+    visibility = ["//visibility:public"],
 )
 
-py_test(
-    name = "sysmon_test",
-    srcs = [
-        "tests/run_tests.py",
-        "tests/test_sysmon.py",
-        "tests/__init__.py",
-    ],
-    main = "tests/run_tests.py",
-    deps = [
-        ":framework",
-        "@pip//pytest",
-    ],
+py_inamdar_test(
+    name = "main_test_target",
+    test_suite = ["//tests/sysmon_tests:sysmon_test"],
 )

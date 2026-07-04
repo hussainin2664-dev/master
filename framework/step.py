@@ -29,6 +29,10 @@ def clear_steps():
 
 
 def get_steps():
+    """Return a copy of recorded steps.
+
+    Each step is returned as a tuple: (phase_label, message).
+    """
     return list(_steps)
 
 
@@ -60,8 +64,10 @@ def step(message):
         (),
         None
     )
-    record.phase = get_phase_label()
+    phase_label = get_phase_label()
+    record.phase = phase_label
     logger.handle(record)
-    
-    _steps.append(message)
+
+    # store both phase and message so callers can slice by phase
+    _steps.append((phase_label, message))
     step_no += 1

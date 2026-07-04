@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pytest_cache/
+*.cache
+*.egg-info/
+.eggs/
+venv/
+.venv/
+ENV/
+env/
+
+# Bazel outputs
+bazel-* 
+bazel-bin/
+bazel-out/
+bazel-testlogs/
+bazel-TestFrameWork/
+
+# Local test outputs
+output/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+# Additional generated test output directories
+bazel_test_outputs/

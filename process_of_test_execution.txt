@@ -1,0 +1,90 @@
+Process of Test Execution
+=========================
+
+1. Start command
+----------------
+
+- Direct Python run:
+  - `./.venv/Scripts/python.exe run_tests.py`
+  - or `bash run_test.sh`
+- Bazel run:
+  - `bazel test //:main_test_target --test_output=errors`
+
+2. Runner entry point
+---------------------
+
+- `run_tests.py` is the repository-level entry point.
+- It resolves the default test path to `tests/sysmon_tests` when no arguments are provided.
+- It calls `pytest.main(args)` to execute pytest on the selected test package.
+
+3. Test package structure
+-------------------------
+
+- `tests/sysmon_tests/` contains the actual test files and the package-level runner.
+- The key files in this package are:
+  - `run_tests.py` (custom runner and log/report generation)
+  - `test_dummy.py` and `test_sysmon.py` (example test cases)
+  - `conftest.py` (pytest hook configuration)
+
+4. Framework dependencies
+-------------------------
+
+- `//:framework` is a Bazel Python library target containing the test framework utilities.
+- It includes `assertion.py`, `base_test.py`, `logger.py`, `step.py`, `config.py`, and `utils.py`.
+- The framework is imported by the tests and enables phase-aware step logging, assertions, and teardown behavior.
+
+5. Bazel target behavior
+------------------------
+
+- The root Bazel target `//:main_test_target` is defined as a `test_suite` target.
+- It depends on the `//tests/sysmon_tests:sysmon_test` test package.
+- This allows Bazel to resolve the package and execute the tests from the top-level workspace.
+
+6. Test execution flow
+----------------------
+
+- `pytest` loads `tests/conftest.py` and applies any custom hooks.
+- The framework records step events in these phases:
+  - `setup`
+  - `call` (test execution)
+  - `teardown`
+- `BaseTest` ensures `setup()` and `teardown()` are invoked around each test method.
+- Failures in teardown are captured and reported as overall test errors.
+
+7. Reporting and output generation
+----------------------------------
+
+- `tests/sysmon_tests/run_tests.py` is responsible for generating two report files:
+  - `test.log`
+  - `report.xml`
+- When running directly, it writes them to `output/test.log` and `output/report.xml`.
+- Under Bazel, it writes them into the Bazel-preserved test output directory using environment variables like `TEST_UNDECLARED_OUTPUTS_DIR`.
+
+8. `test.log` contents
+----------------------
+
+- Each executed test starts with a timestamped header.
+- Step messages are prefixed with the same timestamp.
+- Duplicate raw step lines are removed.
+- The file ends with a summary section showing:
+  - Total tests
+  - Passed
+  - Failed
+  - Error
+  - Skipped
+  - Executed test list with final statuses
+
+9. `report.xml` contents
+------------------------
+
+- Generated as a JUnit-style XML report.
+- Includes test suite and test case elements with result statuses.
+- Useful for CI systems and test-report parsers.
+
+10. Key points for Bazel
+------------------------
+
+- Bazel preserves files only when they are written to declared test output locations.
+- `tests/sysmon_tests/run_tests.py` must detect the Bazel output environment and write reports there.
+- The root `BUILD` uses `py_inamdar_test` to expose the package as `//:main_test_target`.
+- `run_tests.py` and the `tests/sysmon_tests` package must stay in sync with Bazel target definitions.

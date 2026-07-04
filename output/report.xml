@@ -1,8 +1,0 @@
-class TestSysmonn(BaseTest):
-
-    def setup(self):
-        step("Launch Application")
-
-    def test_sysmot(self):
-        assert_step(condition, " process is running")  ---FAILED
-        <Reason of failure:  process is running>
