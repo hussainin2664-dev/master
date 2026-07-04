@@ -1,0 +1,2 @@
+2026-07-04 16:54:13 setup.test_sysmot INFO STEP 1: Launch Application
+2026-07-04 16:54:13 setup.test_sysmot INFO STEP 2: ASSERTION FAILED:  process is running
