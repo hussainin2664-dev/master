@@ -1,59 +1,81 @@
 # Tests Folder README
 
-This folder contains pytest integration files and user test cases.
+This folder contains the pytest integration layer and example user tests.
+It also defines the package-level test runner used for local execution and Bazel integration.
 
-Files:
+## Purpose
+
+- Keep test package code separate from framework internals.
+- Provide custom pytest hooks for test metadata validation and failure handling.
+- Generate readable test artifacts for both local and Bazel runs.
+
+## Main files
 
 - `__init__.py`
-  - Marks the `tests` folder as a Python package.
+  - Marks `tests/` as a Python package.
 
 - `conftest.py`
-  - Defines pytest hooks for the custom reporting behavior.
-  - Clears step logs before each test.
-  - Enforces required metadata markers on each test class.
-  - Supports custom failure handling and report generation.
+  - Implements custom pytest hooks for the project.
+  - Clears framework step state before each test.
+  - Enforces required metadata markers on each test.
+  - Writes readable failure reports and ensures teardown errors are reported correctly.
 
 - `run_tests.py`
-  - A helper script for running tests from the repository root.
-  - Defaults to executing `tests/sysmon_tests/` when no arguments are supplied.
-  - When run directly, pytest is invoked against the `tests/sysmon_tests` folder.
+  - Local test runner entry point.
+  - Uses `pytest.main(...)` to execute tests under `tests/monitor_tests/`.
+  - Defaults to the `tests/monitor_tests` package when no arguments are provided.
 
-- `test_sysmon.py`
-  - Example test class showing framework use.
-  - Uses `BaseTest` and `step()` to define setup, test, and teardown actions.
-  - Includes metadata decorators to satisfy the required test metadata rules.
+- `tests/monitor_tests/`
+  - Contains the actual monitor test package.
+  - Includes a package-level runner, test cases, helper utilities, and custom reporting behavior.
 
-## How tests are executed
+## How tests run
 
-1. `run_tests.py` is invoked with or without explicit test paths.
-2. It resolves the default path to `tests/sysmon_tests` if no args are given.
-3. `pytest.main(...)` runs the selected tests.
-4. The helper runner `tests/sysmon_tests/run_tests.py` may also be executed directly by Bazel.
-5. Each test records phase-aware step output during `setup`, `call`, and `teardown`.
-6. Test artifacts are generated after the run.
+1. `run_tests.py` is executed from the repository root.
+2. If no arguments are provided, it runs `tests/monitor_tests/`.
+3. Pytest loads `tests/conftest.py` and applies the custom hooks.
+4. The framework records test steps for `setup`, `call`, and `teardown` phases.
+5. The runner writes the final artifact files after the test session completes.
 
-## Test artifacts
+## Artifacts produced
 
-- `test.log`
-  - Written by the runner with timestamped step execution lines.
-  - Includes per-test execution details and a consolidated summary.
+- `output/test.log`
+  - A timestamped execution log with one line gap between test cases.
+  - Includes per-test step details and an overall summary.
 
-- `report.xml`
-  - A JUnit-style XML report generated at runtime.
+- `output/report.xml`
+  - A custom readable XML-style report that shows test phase output and failure reasons.
 
-When running directly, both files are written to `output/`.
-When running under Bazel, they are written into Bazel's preserved output directory.
+- `output/pytest_report.xml`
+  - Standard Pytest JUnit XML output for CI tools and report parsers.
 
-## Bazel support
+## Running tests
 
-The repository defines a root Bazel target named `//:main_test_target`.
-This target refers to the Bazel package `//tests/sysmon_tests:sysmon_test`.
-That package contains the actual Python test target and its sources.
+### Direct execution
 
-Use:
+```bash
+bash run_test.sh tests/monitor_tests/
+```
+
+### Python execution
+
+```bash
+./.venv/Scripts/python.exe tests/monitor_tests/run_tests.py
+```
+
+### Bazel execution
 
 ```bash
 bazel test //:main_test_target --test_output=errors
 ```
 
-This target executes all cases under `tests/sysmon_tests/` and preserves the generated `test.log` and `report.xml` files in Bazel's output tree.
+For a fresh Bazel run that ignores cache:
+
+```bash
+bazel test //:main_test_target --test_output=errors --nocache_test_results
+```
+
+## Test metadata
+
+Each test should include the required metadata markers defined in `conftest.py`.
+This repository validates metadata before tests execute and raises errors for missing or incomplete metadata.

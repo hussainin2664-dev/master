@@ -50,15 +50,26 @@ def _write_test_log(workspace_root, junit_path):
 if __name__ == "__main__":
     pkg_dir = os.path.dirname(os.path.abspath(__file__))
     workspace_root = os.path.abspath(os.path.join(pkg_dir, "..", ".."))
+    sys.path.insert(0, workspace_root)
     default_test_target = pkg_dir
     args = sys.argv[1:] or [default_test_target]
 
     # Prefer Bazel test outputs dir when available so files are preserved by Bazel test runner
-    output_dir = os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR") or os.environ.get("TEST_TMPDIR") or os.path.join(workspace_root, "output")
-    os.makedirs(output_dir, exist_ok=True)
+    bazel_output_dir = os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR") or os.environ.get("TEST_TMPDIR")
+    workspace_output_dir = os.path.join(workspace_root, "output")
+    output_dir = bazel_output_dir or workspace_output_dir
+    output_dirs = [output_dir]
+    if bazel_output_dir and bazel_output_dir != workspace_output_dir:
+        output_dirs.append(workspace_output_dir)
 
-    # Ensure junit xml is generated to a known location (use Bazel outputs dir when running under Bazel)
-    junit_path = os.path.join(output_dir, "report.xml")
+    for d in output_dirs:
+        os.makedirs(d, exist_ok=True)
+    # Clear custom report file before the run so stale XML does not remain
+    report_file_path = os.path.join(output_dir, "report.xml")
+    with open(report_file_path, "w", encoding="utf-8"):
+        pass
+    # Ensure pytest junit xml is generated to a separate file so custom report.xml remains available
+    junit_path = os.path.join(output_dir, "pytest_report.xml")
     if not any(arg.startswith("--junitxml") for arg in args):
         args = args + ["--junitxml=" + junit_path]
 
@@ -174,10 +185,19 @@ if __name__ == "__main__":
 
     try:
         with open(test_log_path, "w", encoding="utf-8") as fh:
-            for n in collector.tests:
+            for idx, n in enumerate(collector.tests):
                 e = collector._results.get(n, {})
                 ts = e.get("ts") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                fh.write(f"{ts} Executing test {n}\n")
+                parts = n.split("::")
+                file_path = parts[0].replace("\\", "/")
+                abs_file_path = os.path.abspath(os.path.join(workspace_root, file_path))
+                test_id = "::".join(parts[1:]) if len(parts) > 1 else ""
+                display_test = f"{abs_file_path}::{test_id}" if test_id else abs_file_path
+
+                if idx > 0:
+                    fh.write("\n")
+
+                fh.write(f"{ts} Executing test {display_test}\n")
                 cap = e.get("captured") or ""
                 if cap:
                     formatted_lines = _format_test_capture(cap, ts)
@@ -185,12 +205,11 @@ if __name__ == "__main__":
                         fh.write("\n".join(formatted_lines))
                         fh.write("\n")
 
-                file_path = n.split("::")[0].replace("\\", "/")
                 status = e.get("status") or ("PASSED" if e.get("passed") else "")
-                fh.write(f"{file_path}: {status}\n\n")
+                fh.write(f"{display_test}: {status}\n\n")
 
             # final summary
-            fh.write("\n--- Test Summary ---\n")
+            fh.write("--- Overall Test Summary ---\n")
             fh.write(f"Total: {len(collector.tests)}\n")
             fh.write(f"Passed: {collector.passed}\n")
             fh.write(f"Failed: {collector.failed}\n")
@@ -199,6 +218,12 @@ if __name__ == "__main__":
             fh.write("Executed tests:\n")
             for n in collector.tests:
                 e = collector._results.get(n, {})
+                parts = n.split("::")
+                file_path = parts[0].replace("\\", "/")
+                abs_file_path = os.path.abspath(os.path.join(workspace_root, file_path))
+                test_id = "::".join(parts[1:]) if len(parts) > 1 else ""
+                display_test = f"{abs_file_path}::{test_id}" if test_id else abs_file_path
+
                 if e.get("skipped"):
                     st = "SKIPPED"
                 elif e.get("failed"):
@@ -208,9 +233,19 @@ if __name__ == "__main__":
                     st = "PASSED"
                 else:
                     st = "PASSED"
-                fh.write(f"{n} {st}\n")
+                fh.write(f"{display_test} {st}\n")
     except Exception:
         pass
+
+    # Copy Bazel output files back to workspace output dir when running under Bazel
+    if bazel_output_dir and bazel_output_dir != workspace_output_dir:
+        try:
+            import shutil
+
+            shutil.copyfile(os.path.join(output_dir, "test.log"), os.path.join(workspace_output_dir, "test.log"))
+            shutil.copyfile(os.path.join(output_dir, "report.xml"), os.path.join(workspace_output_dir, "report.xml"))
+        except Exception:
+            pass
 
     # (Don't duplicate JUnit parsing here; collector already wrote a concise summary.)
     raise SystemExit(exit_code)

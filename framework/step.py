@@ -13,8 +13,8 @@ def set_phase(phase, test_class_name=None, test_method_name=None):
     
     Args:
         phase: "Setup", "Test", or "Teardown"
-        test_class_name: Name of the test class (e.g., "TestSysmon")
-        test_method_name: Name of the test method (e.g., "test_sysmon")
+        test_class_name: Name of the test class (e.g., "TestMonitor")
+        test_method_name: Name of the test method (e.g., "test_monitor")
     """
     global _current_phase, _test_class_name, _test_method_name
     _current_phase = phase

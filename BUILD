@@ -13,5 +13,5 @@ py_library(
 
 py_inamdar_test(
     name = "main_test_target",
-    test_suite = ["//tests/sysmon_tests:sysmon_test"],
+    test_suite = ["//tests/monitor_tests:monitor_test"],
 )

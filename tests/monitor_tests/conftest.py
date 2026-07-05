@@ -16,7 +16,8 @@ except ImportError:
 from framework.step import clear_steps, get_steps
 
 ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = Path(os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR", ROOT / "output"))
+REPO_ROOT = ROOT.parent
+OUTPUT_DIR = Path(os.environ.get("TEST_UNDECLARED_OUTPUTS_DIR", REPO_ROOT / "output"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 REPORT_PATH = OUTPUT_DIR / "report.xml"
 LOG_PATH = OUTPUT_DIR / "test.log"

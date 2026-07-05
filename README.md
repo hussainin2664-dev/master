@@ -1,75 +1,93 @@
 # Test Framework Project
 
-This repository implements a custom Python test framework and reporting system on top of `pytest`.
-It includes framework utilities, custom metadata checks, phase-aware step logging, and generated test reports.
+This repository contains a custom Python test framework built on top of `pytest`.
+It includes reusable framework utilities, step-based test reporting, failure-aware teardown handling, and Bazel integration.
 
-## Project structure
+## Repository structure
 
 - `framework/`
-  - Core framework modules for assertions, logging, and test lifecycle control.
+  - Core framework modules for assertions, logging, test lifecycle management, and step recording.
   - See `framework/README.md` for implementation details.
 
 - `tests/`
-  - Pytest integration folder and example test packages.
-  - Contains `tests/sysmon_tests/` for grouped Sysmon test cases.
-  - See `tests/README.md` for details on test package structure and Bazel usage.
+  - Pytest integration files and example test packages.
+  - Contains `tests/monitor_tests/`, which implements the monitor test package and custom test runner.
+  - See `tests/README.md` for test execution and artifact behavior.
 
 - `output/`
-  - Generated artifacts from test runs.
-  - Output files include `output/report.xml` and `output/test.log` when running directly.
+  - Generated artifacts from direct and Bazel test runs.
+  - Current output files include `output/report.xml`, `output/test.log`, and `output/pytest_report.xml`.
 
 - `pytest.ini`
-  - Registers custom pytest markers used by the test metadata system.
+  - Configures pytest markers and enables custom test metadata validation.
 
 - `requirements.txt`
-  - Python dependencies required by the test framework.
+  - Python dependencies required by the framework and tests.
 
 - `requirements_lock.txt`
   - Locked package versions for reproducible environments.
 
 - `run_test.sh`
-  - Convenience shell script to run tests from a Unix-like terminal.
+  - Shell script wrapper for running tests from a Unix-like shell.
+
+- `run_tests.py`
+  - Repository-level Python entry point for running tests.
 
 - `process_of_test_execution.txt`
-  - A detailed execution-flow document describing how tests are triggered, dependencies are resolved, and reports are generated.
+  - Documentation describing test execution flow, reporting behavior, and Bazel target mapping.
 
-## Current behavior
+## What this project provides
 
-- The framework records named steps during each test phase (`setup`, `test`, `teardown`).
-- Test failures in teardown are reported as `ERROR` and are included in the final summary.
-- A custom runner writes a timestamped `test.log` and a JUnit-style `report.xml` after execution.
-- When running under Bazel, these files are written into Bazel's preserved test output directory.
+- A test framework that records named step output during `setup`, `call`, and `teardown` phases.
+- Custom assertion behavior that logs passed and failed assertions as step events.
+- A custom runner that generates a readable `output/report.xml` and a timestamped `output/test.log`.
+- Bazel integration that preserves generated artifacts in the Bazel test output directory.
 
-## Running tests locally
+## Run tests locally
 
-From the project root using Python:
-
-```bash
-./.venv/Scripts/python.exe run_tests.py
-```
-
-From a Unix-like shell:
+From the repository root:
 
 ```bash
-bash run_test.sh
+bash run_test.sh tests/monitor_tests/
 ```
 
-When run directly, the runner writes artifacts to `output/report.xml` and `output/test.log`.
+Or directly with Python:
 
-## Running tests with Bazel
+```bash
+./.venv/Scripts/python.exe tests/monitor_tests/run_tests.py
+```
 
-Use Bazel with the root test target:
+Both commands write output to the repository-level `output/` folder.
+
+## Run tests with Bazel
+
+Use the root Bazel target:
 
 ```bash
 bazel test //:main_test_target --test_output=errors
 ```
 
-This executes the `tests/sysmon_tests` package through the root Bazel target and preserves test artifacts in Bazel test output directories. The actual report files are written to the Bazel-managed output location, not necessarily the repo `output/` folder.
+For a fresh execution that ignores cached test results, use:
+
+```bash
+bazel test //:main_test_target --test_output=errors --nocache_test_results
+```
+
+This runs the `tests/monitor_tests` package through Bazel and preserves the generated artifacts.
+
+## Output files
+
+- `output/report.xml`
+  - Custom readable report with test phase steps and failure summaries.
+
+- `output/test.log`
+  - Timestamped log of test execution, including step output and overall summary.
+
+- `output/pytest_report.xml`
+  - Standard pytest JUnit XML output for CI tools.
 
 ## Notes
 
-- `//:main_test_target` is a Bazel `test_suite` target that runs the test package defined in `tests/sysmon_tests/`.
-- The test runner is responsible for generating both `test.log` and `report.xml`.
-- See `tests/README.md` for package-level execution details and `framework/README.md` for internal framework behavior.
-# master
-# master
+- The Bazel test target `//:main_test_target` is a `test_suite` that depends on `//tests/monitor_tests:monitor_test`.
+- The framework supports phase-aware logging and teardown failure handling.
+- `process_of_test_execution.txt` explains the full runtime flow and output generation.

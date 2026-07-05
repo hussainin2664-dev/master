@@ -14,7 +14,7 @@ def py_inamdar_test(name, test_suite, deps = []):
       load("//:py_inamdar.bzl", "py_inamdar_test")
       py_inamdar_test(
           name = "main_test_target",
-          test_suite = ["//tests/sysmon_tests:sysmon_test"],
+          test_suite = ["//tests/monitor_tests:monitor_test"],
       )
     """
     sorted_list = _sorted_labels(test_suite)
@@ -25,7 +25,7 @@ def py_inamdar_test(name, test_suite, deps = []):
     native.test_suite(name = name, tests = test_suite)
 
 
-def py_inamdar_py_test(name, srcs, main = None, deps = [], visibility = None):
+def py_inamdar_py_test(name, srcs, main = None, deps = [], visibility = None, size = "small"):
     """
     Wrapper around `py_test` that enforces alphabetical ordering of `srcs`.
     """
@@ -34,4 +34,4 @@ def py_inamdar_py_test(name, srcs, main = None, deps = [], visibility = None):
         fail("py_inamdar_py_test: `srcs` entries must be in alphabetical order.\n" +
              "Expected order: %s\nCurrent order: %s" % (sorted_srcs, srcs))
 
-    py_test(name = name, srcs = srcs, main = main, deps = deps, visibility = visibility)
+    py_test(name = name, srcs = srcs, main = main, deps = deps, visibility = visibility, size = size)

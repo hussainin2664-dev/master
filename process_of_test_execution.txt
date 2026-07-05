@@ -13,17 +13,17 @@ Process of Test Execution
 2. Runner entry point
 ---------------------
 
-- `run_tests.py` is the repository-level entry point.
-- It resolves the default test path to `tests/sysmon_tests` when no arguments are provided.
+-- `run_tests.py` is the repository-level entry point.
+-- It resolves the default test path to `tests/monitor_tests` when no arguments are provided.
 - It calls `pytest.main(args)` to execute pytest on the selected test package.
 
 3. Test package structure
 -------------------------
 
-- `tests/sysmon_tests/` contains the actual test files and the package-level runner.
+-- `tests/monitor_tests/` contains the actual test files and the package-level runner.
 - The key files in this package are:
   - `run_tests.py` (custom runner and log/report generation)
-  - `test_dummy.py` and `test_sysmon.py` (example test cases)
+  - `test_python_application.py` and `test_monitor.py` (example test cases)
   - `conftest.py` (pytest hook configuration)
 
 4. Framework dependencies
@@ -37,7 +37,7 @@ Process of Test Execution
 ------------------------
 
 - The root Bazel target `//:main_test_target` is defined as a `test_suite` target.
-- It depends on the `//tests/sysmon_tests:sysmon_test` test package.
+-- It depends on the `//tests/monitor_tests:monitor_test` test package.
 - This allows Bazel to resolve the package and execute the tests from the top-level workspace.
 
 6. Test execution flow
@@ -54,7 +54,7 @@ Process of Test Execution
 7. Reporting and output generation
 ----------------------------------
 
-- `tests/sysmon_tests/run_tests.py` is responsible for generating two report files:
+-- `tests/monitor_tests/run_tests.py` is responsible for generating two report files:
   - `test.log`
   - `report.xml`
 - When running directly, it writes them to `output/test.log` and `output/report.xml`.
